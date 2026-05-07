@@ -273,3 +273,8 @@ if __name__ == "__main__":
     )
 
     encoder.pretty_print()
+
+    # Generate bin file by using binary output in
+    # echo "10...." | fold -w8 | while read -r byte; do
+    #   printf "%02x" "$((2#$byte))"
+    # done | xxd -r -p > datei.bi
