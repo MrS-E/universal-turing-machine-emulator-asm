@@ -193,27 +193,45 @@ static char *read_file_binary(const char *path) {
   if (!f)
     return NULL;
 
-  fseek(f, 0, SEEK_END);
+  if (fseek(f, 0, SEEK_END) != 0) {
+    fclose(f);
+    return NULL;
+  }
+
   long len = ftell(f);
+  if (len < 0) {
+    fclose(f);
+    return NULL;
+  }
   rewind(f);
 
-  char *raw = malloc(len + 1);
-  if (fread(raw, 1, len, f) != (size_t)len) {
+  unsigned char *raw = malloc((size_t)len);
+  if (!raw) {
+    fclose(f);
+    return NULL;
+  }
+
+  if (fread(raw, 1, (size_t)len, f) != (size_t)len) {
     free(raw);
     fclose(f);
     return NULL;
   }
-  raw[len] = '\0';
   fclose(f);
 
-  /* strip non-binary chars */
-  char *out = malloc(len + 1);
-  int j = 0;
-  for (int i = 0; i < len; i++) {
-    if (raw[i] == '0' || raw[i] == '1')
-      out[j++] = raw[i];
+  char *out = malloc((size_t)len * 8 + 1);
+  if (!out) {
+    free(raw);
+    return NULL;
+  }
+
+  size_t j = 0;
+  for (long i = 0; i < len; i++) {
+    for (int bit = 7; bit >= 0; bit--) {
+      out[j++] = (raw[i] & (1u << bit)) ? '1' : '0';
+    }
   }
   out[j] = '\0';
+
   free(raw);
   return out;
 }
